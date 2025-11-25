@@ -5,7 +5,7 @@
 library(tidyverse)
 library(forcats)
 library(patchwork) # side-by-side alignment
-
+library(ggdendro)
 
 
 
@@ -115,6 +115,15 @@ left_df <- left_df %>%
 left_df$Trait1 <- factor(left_df$Trait1, levels = trait_order)
 left_df$Trait2 <- factor(left_df$Trait2, levels = trait_order)
 
+# Create dendrogram plot for traits (will go above p_left)
+dend_data_trait <- dendro_data(as.dendrogram(hc), type = "rectangle")
+
+p_trait_dend <- ggplot(segment(dend_data_trait)) +
+  geom_segment(aes(x = x, y = y, xend = xend, yend = yend), linewidth = 0.5) +
+  scale_x_continuous(expand = c(0.01, 0.01)) +
+  theme_void() +
+  theme(plot.margin = margin(5, 5, 0, 5))
+
 p_left <- ggplot(left_df, aes(x = Trait2, y = Trait1, fill = Value)) +
   geom_tile(color = "black", linewidth = 0.2) +        # <-- border
   geom_text(aes(label = sprintf("%.2f", Value)),       # <-- show numbers
@@ -130,6 +139,9 @@ p_left <- ggplot(left_df, aes(x = Trait2, y = Trait1, fill = Value)) +
   ) +
   labs(x = "Cardiovascular trait categories")
 
+# Create dendrogram plot for traits (will go above p_left)
+dend_data_trait <- dendro_data(as.dendrogram(hc), type = "rectangle")
+
 
 ############################################
 #####             STEP 4               #####
@@ -141,6 +153,15 @@ df_pleio$Trait <- factor(df_pleio$Trait, levels = trait_order)
 # Apply gene clustering order
 df_pleio$Gene <- factor(df_pleio$Gene, levels = gene_order)
 
+# Create dendrogram plot for genes (will go above p_right)
+dend_data_gene <- dendro_data(as.dendrogram(gene_hc), type = "rectangle")
+
+p_gene_dend <- ggplot(segment(dend_data_gene)) +
+  geom_segment(aes(x = x, y = y, xend = xend, yend = yend), linewidth = 0.5) +
+  scale_x_continuous(expand = c(0.01, 0.01)) +
+  theme_void() +
+  theme(plot.margin = margin(5, 5, 0, 5))
+
 p_right <- ggplot(df_pleio, aes(x = Gene, y = Trait, fill = Significant)) +
   geom_tile(color = "black", linewidth = 0.2) +
   scale_fill_manual(values = c("0" = "white", "1" = "#2C7BB6"),
@@ -151,11 +172,14 @@ p_right <- ggplot(df_pleio, aes(x = Gene, y = Trait, fill = Significant)) +
     axis.title.y = element_blank(),
     axis.text.y = element_blank(),
     axis.ticks.y = element_blank(),
-    axis.text.x = element_text(angle = 45, hjust = 1, size = 4, face = "italic"),
+    axis.text.x = element_text(angle = 90, hjust = 1, size = 5, face = "italic"),
     panel.grid = element_blank(),
     legend.position = "none"
   ) +
   labs(x = "Genes identified from association analyses")
+
+# Create dendrogram plot for genes (will go above p_right)
+dend_data_gene <- dendro_data(as.dendrogram(gene_hc), type = "rectangle")
 
 ############################################
 #####             STEP 5               #####
@@ -163,19 +187,17 @@ p_right <- ggplot(df_pleio, aes(x = Gene, y = Trait, fill = Significant)) +
 
 combined_plot <- p_left | p_right
 
-tiff("combined_trait_jaccard_and_gene_trait_heatmap_right_xaxis_clustered.tiff",
-     width = 9000, height = 6000, res = 600)
-print(combined_plot)
-dev.off()
+# First, combine each dendrogram with its heatmap
+left_panel <- p_trait_dend / p_left + plot_layout(heights = c(1, 4))
+right_panel <- p_gene_dend / p_right + plot_layout(heights = c(1, 4))
 
-# Save trait dendrogram
-tiff("trait_dendrogram.tiff", width = 2000, height = 1500, res = 300)
-plot(hc, main = "Trait Clustering Dendrogram",
-     xlab = "", sub = "", cex = 0.8, hang = -1)
-dev.off()
+# Now combine side by side with equal heights
+final_plot <- left_panel | right_panel + 
+  plot_layout(widths = c(1, 2))
 
-# Save gene dendrogram
-tiff("gene_dendrogram.tiff", width = 10000, height = 6000, res = 600)
-plot(gene_hc, main = "Gene Clustering Dendrogram",
-     xlab = "", sub = "", cex = 0.6, las = 2, hang = -1)
-dev.off()
+# Display
+print(final_plot)
+
+# Optional: Save with good dimensions
+ggsave("heatmap_with_dendrograms.pdf", final_plot, 
+       width = 14, height = 8, units = "in")
