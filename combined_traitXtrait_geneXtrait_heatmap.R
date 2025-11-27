@@ -131,13 +131,16 @@ p_left <- ggplot(left_df, aes(x = Trait2, y = Trait1, fill = Value)) +
   scale_fill_gradient(low = "white", high = "red") +
   theme_minimal() +
   theme(
-    axis.title = element_blank(),
+    axis.title.y = element_text(size = 10, margin = margin(r = 10)), # margin for y-axis title
+    axis.title.x = element_text(size = 10, margin = margin(t = 10)), # margin for x-axis title
     axis.text.x = element_text(angle = 45, hjust = 1, size = 8),
     axis.text.y = element_text(size = 8),
     panel.grid = element_blank(),
-    legend.position = "none"
+    legend.position = "none",
+    plot.margin = margin(5, 5, 10, 5)  # Add bottom margin
   ) +
-  labs(x = "Cardiovascular trait categories")
+  labs(x = "Cardiovascular trait categories",
+       y = "Cardiovascular trait categories")
 
 # Create dendrogram plot for traits (will go above p_left)
 dend_data_trait <- dendro_data(as.dendrogram(hc), type = "rectangle")
@@ -170,11 +173,13 @@ p_right <- ggplot(df_pleio, aes(x = Gene, y = Trait, fill = Significant)) +
   theme_minimal() +
   theme(
     axis.title.y = element_blank(),
+    axis.title.x = element_text(size = 10, margin = margin(t = 10)), # margin for x-axis title
     axis.text.y = element_blank(),
     axis.ticks.y = element_blank(),
     axis.text.x = element_text(angle = 90, hjust = 1, size = 5, face = "italic"),
     panel.grid = element_blank(),
-    legend.position = "none"
+    legend.position = "none",
+    plot.margin = margin(5, 5, 10, 5)  # Add bottom margin
   ) +
   labs(x = "Genes identified from association analyses")
 
