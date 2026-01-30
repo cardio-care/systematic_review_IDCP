@@ -90,15 +90,6 @@ gene_hc <- hclust(gene_dist, method = "average")
 # Order of genes for heatmap
 gene_order <- gene_hc$labels[gene_hc$order]
 
-## Step 2b: Cluster genes for x-axis ordering
-#gene_matrix <- as.matrix(select(gene_trait_matrix, -Gene, -TraitCount))
-#rownames(gene_matrix) <- gene_trait_matrix$Gene
-#
-## Compute distance and hierarchical clustering
-#gene_dist <- dist(gene_matrix, method = "binary")   # or method = "euclidean" if you prefer
-#gene_hc <- hclust(gene_dist, method = "average")
-#gene_order <- gene_hc$labels[gene_hc$order]
-
 ############################################
 #####             STEP 3               #####
 ############################################
@@ -145,6 +136,14 @@ p_left <- ggplot(left_df, aes(x = Trait2, y = Trait1, fill = Value)) +
 # Create dendrogram plot for traits (will go above p_left)
 dend_data_trait <- dendro_data(as.dendrogram(hc), type = "rectangle")
 
+ggsave(
+  filename = "p_left.pdf",
+  plot = p_left,
+  width = 8,
+  height = 6,
+  units = "in"
+)
+
 
 ############################################
 #####             STEP 4               #####
@@ -172,37 +171,26 @@ p_right <- ggplot(df_pleio, aes(x = Gene, y = Trait, fill = Significant)) +
   scale_y_discrete(limits = trait_order) +
   theme_minimal() +
   theme(
-    axis.title.y = element_blank(),
+    axis.title.y = element_text(size = 10, margin = margin(r = 10)),
     axis.title.x = element_text(size = 10, margin = margin(t = 10)), # margin for x-axis title
-    axis.text.y = element_blank(),
+    axis.text.y = element_text(size = 8),
     axis.ticks.y = element_blank(),
-    axis.text.x = element_text(angle = 90, hjust = 1, size = 5, face = "italic"),
+    axis.text.x = element_text(angle = 90, hjust = 1, size = 7, face = "italic"),
     panel.grid = element_blank(),
     legend.position = "none",
     plot.margin = margin(5, 5, 10, 5)  # Add bottom margin
   ) +
-  labs(x = "Genes identified from association analyses")
+  labs(x = "Genes identified from association analyses",
+       y = "Cardiovascular trait categories")
 
 # Create dendrogram plot for genes (will go above p_right)
 dend_data_gene <- dendro_data(as.dendrogram(gene_hc), type = "rectangle")
 
-############################################
-#####             STEP 5               #####
-############################################
+ggsave(
+  filename = "p_right.pdf",
+  plot = p_right,
+  width = 10,
+  height = 6,
+  units = "in"
+)
 
-combined_plot <- p_left | p_right
-
-# First, combine each dendrogram with its heatmap
-left_panel <- p_trait_dend / p_left + plot_layout(heights = c(1, 4))
-right_panel <- p_gene_dend / p_right + plot_layout(heights = c(1, 4))
-
-# Now combine side by side with equal heights
-final_plot <- left_panel | right_panel + 
-  plot_layout(widths = c(1, 2))
-
-# Display
-print(final_plot)
-
-# Optional: Save with good dimensions
-ggsave("heatmap_with_dendrograms.pdf", final_plot, 
-       width = 14, height = 8, units = "in")
